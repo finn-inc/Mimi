@@ -38,7 +38,7 @@ export class AnthropicAiClient implements AiClient {
     if (!process.env.ANTHROPIC_API_KEY) {
       throw new Error('ANTHROPIC_API_KEY が設定されていません。.env ファイルまたは環境変数に設定してください。');
     }
-    this.client = new Anthropic();
+    this.client = new Anthropic({ timeout: 3 * 60 * 1000 });
   }
 
   async chat(systemPrompt: string, userPrompt: string, options?: ChatOptions): Promise<string> {

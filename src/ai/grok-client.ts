@@ -7,7 +7,7 @@ export function createXaiClient(): OpenAI {
   if (!apiKey) {
     throw new Error('XAI_API_KEY 環境変数が設定されていません');
   }
-  return new OpenAI({ apiKey, baseURL: 'https://api.x.ai/v1' });
+  return new OpenAI({ apiKey, baseURL: 'https://api.x.ai/v1', timeout: 3 * 60 * 1000 });
 }
 
 export class GrokAiClient implements AiClient {
