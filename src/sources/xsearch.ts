@@ -1,37 +1,8 @@
 import type { SourceAdapter, FetchResult } from './types.js';
 import type { XSearchSourceConfig } from '../config/schema.js';
-import { parseXSearchResponse } from './xsearch-parser.js';
+import { parseXSearchResponse, XSEARCH_RESPONSE_SCHEMA } from './xsearch-parser.js';
 import { createXaiClient } from '../ai/grok-client.js';
 import { toErrorMessage } from '../utils/error.js';
-
-const XSEARCH_RESPONSE_SCHEMA = {
-  type: 'json_schema' as const,
-  name: 'x_search_results',
-  strict: true,
-  schema: {
-    type: 'object',
-    properties: {
-      posts: {
-        type: 'array',
-        items: {
-          type: 'object',
-          properties: {
-            username: { type: 'string' },
-            text: { type: 'string' },
-            url: { type: 'string' },
-            external_url: { type: ['string', 'null'] },
-            like_count: { type: ['number', 'null'] },
-            posted_at: { type: ['string', 'null'] },
-          },
-          required: ['username', 'text', 'url', 'external_url', 'like_count', 'posted_at'],
-          additionalProperties: false,
-        },
-      },
-    },
-    required: ['posts'],
-    additionalProperties: false,
-  },
-};
 
 export class XSearchAdapter implements SourceAdapter {
   private readonly client: ReturnType<typeof createXaiClient>;

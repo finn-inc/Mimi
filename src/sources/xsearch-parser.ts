@@ -1,6 +1,35 @@
 import { createHash } from 'node:crypto';
 import type { Article } from './types.js';
 
+export const XSEARCH_RESPONSE_SCHEMA = {
+  type: 'json_schema' as const,
+  name: 'x_search_results',
+  strict: true,
+  schema: {
+    type: 'object',
+    properties: {
+      posts: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            username: { type: 'string' },
+            text: { type: 'string' },
+            url: { type: 'string' },
+            external_url: { type: ['string', 'null'] },
+            like_count: { type: ['number', 'null'] },
+            posted_at: { type: ['string', 'null'] },
+          },
+          required: ['username', 'text', 'url', 'external_url', 'like_count', 'posted_at'],
+          additionalProperties: false,
+        },
+      },
+    },
+    required: ['posts'],
+    additionalProperties: false,
+  },
+};
+
 // x_search の structured output で期待する投稿データの型
 interface XSearchPost {
   username: string;
