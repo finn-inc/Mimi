@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, renameSync } from 'fs';
 import { join } from 'path';
 import type { Article } from '../sources/types.js';
 import { filterByAge } from '../utils/filter.js';
@@ -86,29 +86,65 @@ export class ArticleStore {
     }));
   }
 
+  // 旧ファイル (published_topics.json) を新ファイル (published-topics.json) にマイグレーション
+  private migratePublishedTopics(): void {
+    const oldFilePath = join(this.dataDir, 'published_topics.json');
+    const newFilePath = join(this.dataDir, 'published-topics.json');
+
+    if (!existsSync(oldFilePath)) return;
+
+    let oldTopics: PublishedTopic[] = [];
+    try {
+      oldTopics = JSON.parse(readFileSync(oldFilePath, 'utf-8')) as PublishedTopic[];
+    } catch {
+      console.error('published_topics.json のJSONパースに失敗しました。マイグレーションをスキップします。');
+      return;
+    }
+    let newTopics: PublishedTopic[] = [];
+    if (existsSync(newFilePath)) {
+      try {
+        newTopics = JSON.parse(readFileSync(newFilePath, 'utf-8')) as PublishedTopic[];
+      } catch {
+        console.error('published-topics.json のJSONパースに失敗しました。');
+      }
+    }
+    const mergedIds = new Set(newTopics.map(t => t.id));
+    for (const t of oldTopics) {
+      if (!mergedIds.has(t.id)) {
+        newTopics.push(t);
+      }
+    }
+    writeFileSync(newFilePath, JSON.stringify(newTopics, null, 2), 'utf-8');
+    renameSync(oldFilePath, oldFilePath + '.bak');
+    console.log('published_topics.json を published-topics.json にマイグレーションしました。');
+  }
+
   // 投稿済みトピックをJSONファイルから読み込み
   loadPublishedTopics(): PublishedTopic[] {
-    const filePath = join(this.dataDir, 'published_topics.json');
+    const newFilePath = join(this.dataDir, 'published-topics.json');
+
+    this.migratePublishedTopics();
+
     let raw: string;
     try {
-      raw = readFileSync(filePath, 'utf-8');
+      raw = readFileSync(newFilePath, 'utf-8');
     } catch (err: unknown) {
       if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
-        console.error('published_topics.json の読み込みに失敗しました。');
+        console.error('published-topics.json の読み込みに失敗しました。');
       }
       return [];
     }
     try {
       return JSON.parse(raw) as PublishedTopic[];
     } catch {
-      console.error('published_topics.json のJSONパースに失敗しました。ファイルが破損している可能性があります。');
+      console.error('published-topics.json のJSONパースに失敗しました。ファイルが破損している可能性があります。');
       return [];
     }
   }
 
   // 投稿済みトピックをJSONファイルに追記保存
   savePublishedTopic(topic: PublishedTopic): void {
-    const filePath = join(this.dataDir, 'published_topics.json');
+    const filePath = join(this.dataDir, 'published-topics.json');
     const existing = this.loadPublishedTopics();
     existing.push(topic);
     writeFileSync(filePath, JSON.stringify(existing, null, 2), 'utf-8');
@@ -149,8 +185,9 @@ export class ArticleStore {
     const deduped = this.deduplicate(combined);
     const filtered = filterByAge(deduped);
     this.save(filename, filtered);
-    const newCount = filtered.length - existing.length;
-    return { articles: filtered, totalCount: filtered.length, newCount: Math.max(0, newCount) };
+    const existingUrls = new Set(existing.map(a => a.url));
+    const newCount = filtered.filter(a => !existingUrls.has(a.url)).length;
+    return { articles: filtered, totalCount: filtered.length, newCount };
   }
 
   // 実行履歴をJSONファイルに追記保存
