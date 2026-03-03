@@ -104,6 +104,7 @@ const GrokSchema = z.object({
 const NotionSchema = z.object({
   collectionDbId: z.string(),
   articleDbId: z.string().optional(),
+  articleDataSourceId: z.string().optional(),
   tokenEnvVar: z.string().default('NOTION_API_TOKEN'),
 });
 

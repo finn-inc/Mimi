@@ -4,7 +4,7 @@ import { ArticleStore } from '../store/articles.js';
 import type { PublishedTopic } from '../store/articles.js';
 import { createAiClient } from '../ai/client.js';
 import { generateArticle } from '../ai/generator.js';
-import { initNotionContext, publishArticleToNotion, publishArticleToDatabase } from '../notion/publisher.js';
+import { initNotionContext, publishArticleToNotion, publishArticleToDatabase, checkDuplicateInDatabase } from '../notion/publisher.js';
 import { createNotionClient } from '../notion/client.js';
 import { toErrorMessage } from '../utils/error.js';
 
@@ -55,6 +55,11 @@ Examples:
           ? createNotionClient(config.notion.tokenEnvVar)
           : null;
 
+        // DB 直接書き込みモードの場合、重複チェック用の既存 URL セットを取得
+        const existingUrls = (notionDbClient && config.notion?.articleDataSourceId)
+          ? await checkDuplicateInDatabase(notionDbClient, config.notion.articleDataSourceId)
+          : null;
+
         const publishedTopics: PublishedTopic[] = [];
 
         const total = targetArticles.length;
@@ -91,17 +96,22 @@ Examples:
             const { article, content } = result.value;
             if (notionDbClient && config.notion?.articleDbId) {
               // DB 直接書き込みモード（articleDbId あり）
-              const pubResult = await publishArticleToDatabase(
-                notionDbClient,
-                config.notion.articleDbId,
-                article.title,
-                content,
-              );
-              if (pubResult.success) {
-                console.log(`  → Notion DB に公開: ${pubResult.notionPageUrl}`);
+              const articleUrl = article.url ?? '';
+              if (existingUrls && articleUrl && existingUrls.has(articleUrl)) {
+                console.log(`  → 重複スキップ: ${article.title} (${articleUrl})`);
               } else {
-                console.warn(`  ⚠ Notion 公開失敗: ${pubResult.error}`);
-                console.log(content);
+                const pubResult = await publishArticleToDatabase(
+                  notionDbClient,
+                  config.notion.articleDbId,
+                  article.title,
+                  content,
+                );
+                if (pubResult.success) {
+                  console.log(`  → Notion DB に公開: ${pubResult.notionPageUrl}`);
+                } else {
+                  console.warn(`  ⚠ Notion 公開失敗: ${pubResult.error}`);
+                  console.log(content);
+                }
               }
             } else if (notionCtx) {
               // 日付ページモード（後方互換）

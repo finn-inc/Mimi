@@ -60,6 +60,42 @@ export async function findDatePage(
   return { id: page.id, url: page.url };
 }
 
+export async function checkDuplicateInDatabase(
+  client: Client,
+  dataSourceId: string,
+): Promise<Set<string>> {
+  const existingUrls = new Set<string>();
+  let startCursor: string | undefined = undefined;
+  let hasMore = true;
+
+  while (hasMore) {
+    const response = await client.dataSources.query({
+      data_source_id: dataSourceId,
+      start_cursor: startCursor,
+      page_size: 100,
+    });
+
+    for (const page of response.results) {
+      if (!('properties' in page)) continue;
+      const props = page.properties as Record<string, unknown>;
+      // URL プロパティを探す（"userDefined:URL" または "URL"）
+      for (const prop of Object.values(props)) {
+        if (prop && typeof prop === 'object' && 'type' in prop && (prop as Record<string, unknown>).type === 'url') {
+          const urlValue = (prop as Record<string, unknown>).url;
+          if (typeof urlValue === 'string' && urlValue) {
+            existingUrls.add(urlValue);
+          }
+        }
+      }
+    }
+
+    hasMore = response.has_more;
+    startCursor = response.next_cursor ?? undefined;
+  }
+
+  return existingUrls;
+}
+
 export async function publishArticleToDatabase(
   client: Client,
   databaseId: string,
