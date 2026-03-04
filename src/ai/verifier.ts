@@ -38,29 +38,6 @@ function classifyArticle(article: Article): VerifyResult {
     return { id: article.id, verdict: 'verified', reason: `信頼できる一次ソース（${article.primarySourceType}）` };
   }
 
-  // ルール4.5: 優先3系列（Claude/OpenAI/Gemini）またはAIコーディング関連を含まない記事 → rejected
-  const MAJOR_KEYWORDS = [
-    // === 優先3系列: Anthropic/Claude ===
-    'anthropic', 'claude', 'claude code', 'sonnet', 'opus', 'haiku',
-    // === 優先3系列: OpenAI ===
-    'openai', 'gpt', 'chatgpt', 'codex', 'o1', 'o3', 'o4',
-    // === 優先3系列: Google/Gemini ===
-    'google', 'gemini', 'deepmind', 'gemini code assist',
-    // === コーディングツール・IDE ===
-    'copilot', 'github copilot', 'cursor', 'windsurf', 'cline',
-    'aider', 'devin', 'replit agent',
-    // === AIコーディング概念 ===
-    'ai coding', 'ai code', 'code generation', 'vibe coding',
-    'agentic coding', 'ai ide', 'ai pair programming',
-    'code assistant', 'code completion',
-  ];
-
-  const text = `${article.title} ${article.summary ?? ''}`.toLowerCase();
-  const hasMajorKeyword = MAJOR_KEYWORDS.some(kw => text.includes(kw));
-  if (!hasMajorKeyword) {
-    return { id: article.id, verdict: 'rejected', reason: '優先3系列/AIコーディングに該当しない' };
-  }
-
   // ルール5: 判定不能 → verified（selectorに委ねる）
   return { id: article.id, verdict: 'verified', reason: '判定不能のためselectorに委ねる' };
 }

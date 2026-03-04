@@ -22,6 +22,8 @@ sources:
       - "simonwillison.net"
       - "emollick.bsky.social"
       - "mmitchell.bsky.social"
+      - "swyx.bsky.social"
+      - "hamel.bsky.social"
     limit: 20
     includeTextOnly: false
     credibility: "official"
@@ -62,6 +64,8 @@ sources:
       - "jackclark"
       - "hardmaru"
       - "swyx"
+      - "kaborosu"
+      - "swaborosu"
     includeTextOnly: false
 
   # Bluesky キーワード検索
@@ -88,6 +92,9 @@ sources:
       - "Windsurf AI"
       - "Cline AI"
       - "Devin AI"
+      - "AI best practices"
+      - "LLM tutorial"
+      - "prompt engineering"
     lang: "en"
     sort: "latest"
     limit: 25
@@ -112,6 +119,9 @@ sources:
       - "agentic coding"
       - "Cursor AI"
       - "Windsurf AI"
+      - "AI ベストプラクティス"
+      - "LLM チュートリアル"
+      - "プロンプトエンジニアリング"
     includeTextOnly: false
     daysBack: 2
 
@@ -133,6 +143,23 @@ grok:
   model: "grok-4-1-fast-non-reasoning"
 
 notion:
-  collectionDbId: "c65611d0-119b-407e-9c0a-65b5ce4d396e"
-  articleDbId: "2f3ad2a2-7aab-8023-99c7-cb118d5539a7"
-  articleDataSourceId: "5b2e4637-c3af-4ca9-8f50-35ee950cc649"
+  pipelineDatabaseId: "dc78a364-756f-4bf1-ad3d-8a5d20ea9913"
+  pipelineDataSourceId: "05d1cb9c-d687-42f5-8f7a-6df5e882169b"
+  pipelineDateDatabaseId: "a02fe3bf-ad17-48fa-943d-d0dc3297d970"
+  pipelineDateDataSourceId: "a2d63311-373e-48d9-bd83-c08d36b2ff47"
+
+pipeline:
+  stages:
+    - knowledge
+    - summary
+    - tweet
+  summary:
+    audiences:
+      - name: "エンジニア"
+        description: "AIツールを使う開発者。すぐ試せる情報を重視。"
+        maxLength: 800
+    rounds: 2
+  tweet:
+    maxChars: 280
+    includeHashtags: true
+    hashtagCount: 3

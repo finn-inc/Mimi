@@ -4,11 +4,11 @@ config({ path: '.env' });
 
 import { Command } from 'commander';
 import { loadConfig } from './config/schema.js';
-import { registerFetchCommand } from './commands/fetch.js';
-import { registerSelectCommand } from './commands/select.js';
-import { registerGenerateCommand } from './commands/generate.js';
 import { registerRunCommand } from './commands/run.js';
 import { registerAccountsCommand } from './commands/accounts.js';
+import { registerPipelineCommand } from './commands/pipeline.js';
+import { registerFetchCommand } from './commands/fetch.js';
+import { registerSelectCommand } from './commands/select.js';
 
 const program = new Command();
 
@@ -58,16 +58,17 @@ Examples:
 
 registerFetchCommand(program);
 registerSelectCommand(program);
-registerGenerateCommand(program);
 registerRunCommand(program);
 registerAccountsCommand(program);
+registerPipelineCommand(program);
 
 program.addHelpText('after', `
 Examples:
-  $ mimi fetch                  記事を収集
-  $ mimi select                 記事を選別
-  $ mimi generate               記事を生成
-  $ mimi run                    全パイプラインを一括実行
+  $ mimi run                    fetch→select→pipeline を一括実行
+  $ mimi fetch                  ソースから記事を収集（Notion DB 保存）
+  $ mimi select                 未処理記事を検証・選別
+  $ mimi pipeline               選出記事からコンテンツ生成
+  $ mimi pipeline -d 2026-03-04  過去の処理日を指定して実行
   $ mimi accounts list          監視アカウント一覧
   $ mimi sources                ソース一覧を表示
 `);

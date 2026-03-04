@@ -102,11 +102,37 @@ const GrokSchema = z.object({
 
 // Notion設定
 const NotionSchema = z.object({
-  collectionDbId: z.string(),
-  articleDbId: z.string().optional(),
-  articleDataSourceId: z.string().optional(),
+  pipelineDatabaseId: z.string().optional(),
+  pipelineDataSourceId: z.string().optional(),
+  pipelineDateDatabaseId: z.string().optional(),
+  pipelineDateDataSourceId: z.string().optional(),
   tokenEnvVar: z.string().default('NOTION_API_TOKEN'),
 });
+
+// オーディエンス設定
+const AudienceSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  maxLength: z.number().default(800),
+});
+
+// パイプライン設定
+const PipelineSchema = z.object({
+  stages: z.array(z.enum(['knowledge', 'summary', 'tweet'])).default(['knowledge', 'summary', 'tweet']),
+  summary: z.object({
+    audiences: z.array(AudienceSchema).default([{
+      name: 'エンジニア',
+      description: 'AIツールを使う開発者。すぐ試せる情報を重視。',
+      maxLength: 800,
+    }]),
+    rounds: z.number().default(2),
+  }).default({}),
+  tweet: z.object({
+    maxChars: z.number().default(280),
+    includeHashtags: z.boolean().default(true),
+    hashtagCount: z.number().default(3),
+  }).default({}),
+}).optional();
 
 // 全体設定スキーマ
 export const ConfigSchema = z.object({
@@ -116,6 +142,7 @@ export const ConfigSchema = z.object({
   claude: ClaudeSchema,
   grok: GrokSchema.default({ model: 'grok-4-1-fast-non-reasoning' }),
   notion: NotionSchema.optional(),
+  pipeline: PipelineSchema,
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -128,6 +155,7 @@ export type BlueskySourceConfig = z.infer<typeof BlueskySourceSchema>;
 export type XSearchSourceConfig = z.infer<typeof XSearchSourceSchema>;
 export type BlueskySearchSourceConfig = z.infer<typeof BlueskySearchSourceSchema>;
 export type XSearchKeywordSourceConfig = z.infer<typeof XSearchKeywordSourceSchema>;
+export type PipelineConfig = z.infer<typeof PipelineSchema>;
 
 // config.yamlを読み込み、zodでバリデーションしてパース済みConfigオブジェクトを返す
 export function loadConfig(configPath: string = 'config.yaml'): Config {
